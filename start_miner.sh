@@ -12,27 +12,12 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="$SCRIPT_DIR"
 IDS_STRING="$1"
-ENV_FILE="${ENV_FILE:-$REPO/.env}"
 
-WALLET_NAME="${POKER44_WALLET_NAME:-sn126b}"
-SESSION_PREFIX="${POKER44_SESSION_PREFIX:-sn126b_m}"
-AXON_BASE_PORT="${POKER44_AXON_BASE_PORT:-12080}"
-VENV_BIN="${POKER44_VENV_BIN:-$REPO/.venv/bin}"
-
-MANIFEST_REPO_URL="${POKER44_MODEL_REPO_URL:-https://github.com/tomkaba/poker44-miner-ml13tens1}"
-MANIFEST_REPO_COMMIT="${POKER44_MODEL_REPO_COMMIT:-$(git -C "$REPO" rev-parse HEAD 2>/dev/null || true)}"
-MANIFEST_IMPL_FILES="weights/runtime_model.ts,neurons/miner.py,poker44/__init__.py,poker44/base/miner.py,poker44/base/neuron.py,poker44/miner_heuristics.py,poker44/utils/config.py,poker44/utils/misc.py,poker44/utils/model_manifest.py,poker44/validator/synapse.py"
-MODEL_ARTIFACT_REL="weights/runtime_model.ts"
-
-if [[ -f "$ENV_FILE" ]]; then
-  set -a
-  # shellcheck disable=SC1090
-  source "$ENV_FILE"
-  set +a
-  echo "[env] Loaded $ENV_FILE"
-else
-  echo "[env] File not found, skipping: $ENV_FILE"
-fi
+WALLET_NAME="sn126b"
+SESSION_PREFIX="sn126b_m"
+AXON_BASE_PORT="12080"
+VENV_BIN="$REPO/.venv/bin"
+MODEL_ARTIFACT_REL="weights/gen13_tens3_1k_hardened.ts"
 
 if [[ ! -x "$VENV_BIN/python" ]]; then
   echo "ERROR: Python runtime not found at $VENV_BIN/python"
@@ -64,54 +49,6 @@ if head -n 1 "$MODEL_ARTIFACT_PATH" 2>/dev/null | grep -q "^version https://git-
   fi
 fi
 
-MANIFEST_IMPL_SHA256="$($VENV_BIN/python - <<'PY' "$REPO" "$MANIFEST_IMPL_FILES"
-from pathlib import Path
-import hashlib
-import subprocess
-import sys
-
-repo_root = Path(sys.argv[1]).resolve()
-files_arg = sys.argv[2]
-files = [item.strip() for item in files_arg.split(',') if item.strip()]
-
-if not files:
-    raise SystemExit("MISSING: no manifest implementation files configured")
-
-digest = hashlib.sha256()
-for rel in sorted(files):
-    p = repo_root / rel
-    if not p.exists():
-        raise SystemExit(f"MISSING: {rel}")
-
-    # Use Git-tracked blob bytes when available so implementation SHA is
-    # identical across plain git clones, including LFS-pointer files.
-    file_bytes = None
-    try:
-        file_bytes = subprocess.check_output(
-            ["git", "-C", str(repo_root), "show", f"HEAD:{rel}"],
-            stderr=subprocess.DEVNULL,
-        )
-    except Exception:
-        file_bytes = None
-
-    digest.update(rel.encode('utf-8'))
-    if file_bytes is not None:
-        digest.update(file_bytes)
-    else:
-        with p.open('rb') as f:
-            while True:
-                chunk = f.read(1024 * 1024)
-                if not chunk:
-                    break
-                digest.update(chunk)
-print(digest.hexdigest())
-PY
-)"
-
-echo "[manifest] POKER44_MODEL_REPO_URL=$MANIFEST_REPO_URL"
-echo "[manifest] POKER44_MODEL_REPO_COMMIT=$MANIFEST_REPO_COMMIT"
-echo "[manifest] implementation_files / implementation_sha256 computed inside neurons/miner.py"
-
 for raw_id in $(echo "$IDS_STRING" | tr ',' '\n'); do
   I="$(echo "$raw_id" | tr -d ' ')"
 
@@ -138,12 +75,7 @@ for raw_id in $(echo "$IDS_STRING" | tr ',' '\n'); do
     cd $REPO
     source $VENV_BIN/activate
     export PYTHONPATH=$REPO:\${PYTHONPATH:-}
-    export POKER44_CHUNK_SCORER=runtime
-    export POKER44_MODEL_REPO_URL=$MANIFEST_REPO_URL
-    export POKER44_MODEL_REPO_COMMIT=$MANIFEST_REPO_COMMIT
     echo '[runtime] HOTKEY_ID=$I'
-    echo '[runtime] CHUNK_SCORER=runtime'
-    echo '[runtime] manifest implementation hash computed in miner'
     $VENV_BIN/python -m neurons.miner \
       --netuid 126 \
       --wallet.name $WALLET_NAME \
