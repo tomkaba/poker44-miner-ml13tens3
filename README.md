@@ -1,4 +1,4 @@
-# Poker44-ml13tens1
+# Poker44-ml13tens3
 
 Minimal release repository for Poker44 miner runtime scoring.
 
@@ -7,8 +7,8 @@ This repository is a standalone miner variant prepared for production rollout.
 ## Quick start
 
 ```bash
-git clone https://github.com/tomkaba/poker44-miner-ml13tens1.git
-cd poker44-miner-ml13tens1
+git clone https://github.com/tomkaba/poker44-miner-ml13tens3.git
+cd poker44-miner-ml13tens3
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
