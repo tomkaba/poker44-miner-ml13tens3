@@ -12,7 +12,7 @@
   "data_attestation": "This miner does not train on validator-private human data.",
   "private_data_attestation": "This miner does not train on validator-private human data.",
   "implementation_files": [
-    "weights/runtime_model.ts",
+    "weights/gen13_tens3_1k_hardened.ts",
     "neurons/miner.py",
     "poker44/__init__.py",
     "poker44/base/miner.py",
@@ -23,6 +23,6 @@
     "poker44/utils/model_manifest.py",
     "poker44/validator/synapse.py"
   ],
-  "implementation_sha256": "ebbc3595f430dff430915966a70c38925788b0fd8cb29df251d6bb8b2bc5cf4c",
+  "implementation_sha256": "5a284b7373cbb66dd32fa6f038e98ed51b264050cf0137783deef9f947894ced",
   "notes": "Gen13Tens3 neural network scorer."
 }
